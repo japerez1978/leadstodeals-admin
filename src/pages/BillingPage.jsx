@@ -3,7 +3,7 @@ import { supabase } from '../supabase'
 import { CreditCard, ExternalLink, X, Wallet, CheckCircle, XCircle } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 
-const API_BASE = import.meta.env.DEV ? 'http://localhost:3001' : ''
+const API_BASE = import.meta.env.DEV ? 'http://localhost:3001' : 'https://intranox-proxy-production.up.railway.app'
 
 const PLANS = [
   {
@@ -30,6 +30,19 @@ const PLANS = [
       'Adjuntar fotos a cada SAT',
       'Importar/exportar Excel',
       'Filtros avanzados y búsqueda',
+    ],
+  },
+  {
+    slug: 'mantenimiento_pro',
+    name: 'Mantenimiento Pro',
+    icon: '🚀',
+    price: 200,
+    features: [
+      'Soporte prioritario 24/7',
+      'Copias de seguridad diarias',
+      'Optimización de base de datos',
+      'Consultoría mensual dedicada',
+      'Acceso a todas las apps futuras',
     ],
   },
 ]
@@ -244,7 +257,10 @@ export default function BillingPage() {
                   {subs.map(s => (
                     <tr key={s.id}>
                       <td style={{ fontWeight: 600 }}>
-                        {s.app_slug === 'ofertas_hubspot' ? '📊 Ofertas HubSpot' : s.app_slug === 'sat_gestion' ? '🔧 Gestión SAT' : s.app_slug || '—'}
+                        {s.app_slug === 'ofertas_hubspot' ? '📊 Ofertas HubSpot' : 
+                         s.app_slug === 'sat_gestion' ? '🔧 Gestión SAT' : 
+                         s.app_slug === 'mantenimiento_pro' ? '🚀 Mantenimiento Pro' :
+                         s.app_slug || '—'}
                       </td>
                       <td>
                         <span className={`badge ${s.estado === 'activo' ? 'badge-success' : s.estado === 'cancelado' ? 'badge-danger' : s.estado === 'impago' ? 'badge-warning' : 'badge-info'}`}>
@@ -282,13 +298,13 @@ export default function BillingPage() {
       {/* Plan Selection Modal */}
       {checkoutModal && (
         <div className="modal-overlay" onClick={() => setCheckoutModal(null)}>
-          <div className="modal" style={{ maxWidth: 640 }} onClick={e => e.stopPropagation()}>
+          <div className="modal" style={{ maxWidth: 900 }} onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Añadir plan a {checkoutModal.tenant.nombre}</h3>
               <button className="btn btn-ghost btn-sm" onClick={() => setCheckoutModal(null)}><X size={16} /></button>
             </div>
             <div className="modal-body">
-              <div className="pricing-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+              <div className="pricing-grid" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
                 {PLANS.map(plan => {
                   const alreadyHas = subscriptions.some(s => s.tenant_id === checkoutModal.tenant.id && s.app_slug === plan.slug && s.estado === 'activo')
                   return (

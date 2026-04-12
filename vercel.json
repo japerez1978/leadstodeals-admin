@@ -1,5 +1,8 @@
 {
   "rewrites": [
     { "source": "/proxy/(.*)", "destination": "/api/proxy?proxyPath=$1" }
+  ],
+  "crons": [
+    { "path": "/api/cron-health", "schedule": "0 */6 * * *" }
   ]
 }
