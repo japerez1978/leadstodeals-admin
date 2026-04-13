@@ -23,11 +23,14 @@ export default function DashboardPage() {
     const s = subsRes.data || []
 
     setTenants(t)
+    const mrrTotal = s.reduce((sum, sub) => sum + (parseFloat(sub.precio_mes) || 0), 0)
+    
     setStats({
       tenants: t.length,
       users: u.length,
       activeSubs: s.length,
-      mrr: s.reduce((sum, sub) => sum + (parseFloat(sub.precio_mes) || 0), 0),
+      mrr: mrrTotal,
+      arr: mrrTotal * 12
     })
     setLoading(false)
   }
@@ -43,24 +46,28 @@ export default function DashboardPage() {
 
       <div className="stat-grid">
         <div className="stat-card">
-          <div className="stat-card-label"><Building2 size={14} style={{ display: 'inline', marginRight: 4 }} /> Empresas</div>
+          <div className="stat-card-label"><Building2 size={14} style={{ display: 'inline', marginRight: 4, verticalAlign: 'middle' }} /> Empresas</div>
           <div className="stat-card-value">{stats.tenants}</div>
           <div className="stat-card-sub">Tenants registrados</div>
         </div>
         <div className="stat-card">
-          <div className="stat-card-label"><Users size={14} style={{ display: 'inline', marginRight: 4 }} /> Usuarios</div>
+          <div className="stat-card-label"><Users size={14} style={{ display: 'inline', marginRight: 4, verticalAlign: 'middle' }} /> Usuarios</div>
           <div className="stat-card-value">{stats.users}</div>
           <div className="stat-card-sub">Usuarios activos</div>
         </div>
         <div className="stat-card">
-          <div className="stat-card-label"><CreditCard size={14} style={{ display: 'inline', marginRight: 4 }} /> Suscripciones</div>
-          <div className="stat-card-value">{stats.activeSubs}</div>
-          <div className="stat-card-sub">Planes activos</div>
-        </div>
-        <div className="stat-card">
           <div className="stat-card-label">💰 MRR</div>
-          <div className="stat-card-value" style={{ color: 'var(--success)' }}>{stats.mrr}€</div>
-          <div className="stat-card-sub">Ingresos mensuales recurrentes</div>
+          <div className="stat-card-value" style={{ color: 'var(--success)' }}>
+            {stats.mrr}€<span style={{ fontSize: 14, fontWeight: 500, opacity: 0.7 }}>/mes</span>
+          </div>
+          <div className="stat-card-sub">Ingresos mensuales</div>
+        </div>
+        <div className="stat-card" style={{ background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%)', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
+          <div className="stat-card-label" style={{ color: '#a78bfa' }}>🚀 ARR</div>
+          <div className="stat-card-value" style={{ color: '#a78bfa' }}>
+            {stats.arr}€<span style={{ fontSize: 14, fontWeight: 500, opacity: 0.7 }}>/año</span>
+          </div>
+          <div className="stat-card-sub">Previsión de ingresos anuales</div>
         </div>
       </div>
 

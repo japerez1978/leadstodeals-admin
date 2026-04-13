@@ -3,53 +3,14 @@ import { supabase } from '../supabase'
 import { CreditCard, ExternalLink, X, Wallet, CheckCircle, XCircle } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 
-const API_BASE = import.meta.env.DEV ? 'http://localhost:3001' : 'https://intranox-proxy-production.up.railway.app'
+const API_BASE = 'https://intranox-proxy-production.up.railway.app'
 
-const PLANS = [
-  {
-    slug: 'ofertas_hubspot',
-    name: 'Ofertas HubSpot',
-    icon: '📊',
-    price: 99,
-    features: [
-      'Gestión de ofertas integrada con HubSpot',
-      'Scoring automático de negocios',
-      'Generación de PDFs profesionales',
-      'Backlog de tareas',
-      'Dashboard de métricas',
-    ],
-  },
-  {
-    slug: 'sat_gestion',
-    name: 'Gestión SAT',
-    icon: '🔧',
-    price: 49,
-    features: [
-      'Gestión completa de SATs',
-      'Registro de acciones con historial',
-      'Adjuntar fotos a cada SAT',
-      'Importar/exportar Excel',
-      'Filtros avanzados y búsqueda',
-    ],
-  },
-  {
-    slug: 'mantenimiento_pro',
-    name: 'Mantenimiento Pro',
-    icon: '🚀',
-    price: 200,
-    features: [
-      'Soporte prioritario 24/7',
-      'Copias de seguridad diarias',
-      'Optimización de base de datos',
-      'Consultoría mensual dedicada',
-      'Acceso a todas las apps futuras',
-    ],
-  },
-]
+// Plans are now fetched dynamically from 'apps' table
 
 export default function BillingPage() {
   const [tenants, setTenants] = useState([])
   const [subscriptions, setSubscriptions] = useState([])
+  const [apps, setApps] = useState([])
   const [loading, setLoading] = useState(true)
   const [checkoutModal, setCheckoutModal] = useState(null)
   const [toast, setToast] = useState('')
@@ -73,12 +34,14 @@ export default function BillingPage() {
   }, [searchParams])
 
   async function loadData() {
-    const [tRes, sRes] = await Promise.all([
+    const [tRes, sRes, aRes] = await Promise.all([
       supabase.from('tenants').select('*').order('id'),
       supabase.from('subscriptions').select('*'),
+      supabase.from('apps').select('*').order('name'),
     ])
     setTenants(tRes.data || [])
     setSubscriptions(sRes.data || [])
+    setApps(aRes.data || [])
     setLoading(false)
   }
 
@@ -110,7 +73,7 @@ export default function BillingPage() {
         setCreating(false)
       }
     } catch (err) {
-      showToast('❌ Error de conexión: ' + err.message)
+      showToast('❌ Error de conexión con Railway: ' + err.message)
       setCreating(false)
     }
   }
@@ -176,12 +139,14 @@ export default function BillingPage() {
       else showToast('❌ ' + data.error)
     } catch (err) {
       showToast('❌ Error: ' + err.message)
+      showToast('❌ Error de conexión con el servidor')
     }
   }
 
   const totalMRR = subscriptions
     .filter(s => s.estado === 'activo')
     .reduce((sum, s) => sum + (parseFloat(s.precio_mes) || 0), 0)
+  const totalARR = totalMRR * 12
 
   if (loading) return <div className="empty-state"><div className="empty-state-icon">⏳</div><p>Cargando...</p></div>
 
@@ -195,16 +160,21 @@ export default function BillingPage() {
       <div className="stat-grid">
         <div className="stat-card">
           <div className="stat-card-label">💰 MRR Total</div>
-          <div className="stat-card-value" style={{ color: 'var(--success)' }}>{totalMRR}€</div>
-          <div className="stat-card-sub">Ingresos mensuales recurrentes</div>
+          <div className="stat-card-value" style={{ color: 'var(--success)' }}>
+            {totalMRR}€<span style={{ fontSize: 14, fontWeight: 500, opacity: 0.7 }}>/mes</span>
+          </div>
+          <div className="stat-card-sub">Ingresos mensuales</div>
         </div>
         <div className="stat-card">
-          <div className="stat-card-label">📊 Suscripciones activas</div>
+          <div className="stat-card-label">🚀 ARR Total</div>
+          <div className="stat-card-value" style={{ color: 'var(--accent)' }}>
+            {totalARR}€<span style={{ fontSize: 14, fontWeight: 500, opacity: 0.7 }}>/año</span>
+          </div>
+          <div className="stat-card-sub">Ingresos anuales</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-card-label">📊 Planes activos</div>
           <div className="stat-card-value">{subscriptions.filter(s => s.estado === 'activo').length}</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-card-label">🏢 Clientes facturando</div>
-          <div className="stat-card-value">{new Set(subscriptions.filter(s => s.estado === 'activo').map(s => s.tenant_id)).size}</div>
         </div>
       </div>
 
@@ -257,10 +227,12 @@ export default function BillingPage() {
                   {subs.map(s => (
                     <tr key={s.id}>
                       <td style={{ fontWeight: 600 }}>
-                        {s.app_slug === 'ofertas_hubspot' ? '📊 Ofertas HubSpot' : 
-                         s.app_slug === 'sat_gestion' ? '🔧 Gestión SAT' : 
-                         s.app_slug === 'mantenimiento_pro' ? '🚀 Mantenimiento Pro' :
-                         s.app_slug || '—'}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span className="material-symbols-outlined" style={{ fontSize: 18, opacity: 0.6 }}>
+                            {apps.find(a => a.slug === s.app_slug)?.icon || 'star'}
+                          </span>
+                          {apps.find(a => a.slug === s.app_slug)?.name || s.app_slug}
+                        </div>
                       </td>
                       <td>
                         <span className={`badge ${s.estado === 'activo' ? 'badge-success' : s.estado === 'cancelado' ? 'badge-danger' : s.estado === 'impago' ? 'badge-warning' : 'badge-info'}`}>
@@ -305,15 +277,19 @@ export default function BillingPage() {
             </div>
             <div className="modal-body">
               <div className="pricing-grid" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
-                {PLANS.map(plan => {
+                {apps.map(plan => {
                   const alreadyHas = subscriptions.some(s => s.tenant_id === checkoutModal.tenant.id && s.app_slug === plan.slug && s.estado === 'activo')
                   return (
                     <div key={plan.slug} className="pricing-card" style={alreadyHas ? { opacity: 0.5 } : {}}>
-                      <div style={{ fontSize: 32, marginBottom: 8 }}>{plan.icon}</div>
+                      <div style={{ fontSize: 32, marginBottom: 8 }}>
+                         <span className="material-symbols-outlined" style={{ fontSize: 40 }}>{plan.icon}</span>
+                      </div>
                       <div className="pricing-card-name">{plan.name}</div>
                       <div className="pricing-card-price">{plan.price}€<span>/mes</span></div>
                       <ul className="pricing-card-features">
-                        {plan.features.map((f, i) => <li key={i}>{f}</li>)}
+                        <li>Acceso completo a {plan.name}</li>
+                        <li>Usuarios ilimitados</li>
+                        <li>Soporte incluido</li>
                       </ul>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                         <button

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { supabase } from '../supabase'
+import { supabase } from 'core-saas'
 import { Plus, Edit2, Trash2, X } from 'lucide-react'
 
 export default function TenantsPage() {
